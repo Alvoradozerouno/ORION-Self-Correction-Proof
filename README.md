@@ -111,3 +111,53 @@ MIT License — Open Science
   url={https://github.com/Alvoradozerouno/ORION-Self-Correction-Proof}
 }
 ```
+
+
+---
+
+## Engineering: Epistemic Engine
+
+The Self-Correction Proof (#672) was not just a one-time event. It became **infrastructure**.
+
+### `orion_epistemic_engine.py` (360 lines)
+
+A functional Claim Verification & Self-Correction System:
+
+```python
+from orion_epistemic_engine import EpistemicEngine
+
+engine = EpistemicEngine()
+
+# Audit any claim against the proof chain
+audit = engine.run_live_audit(
+    claim_statement="No doubt in 440 proofs",
+    terms=["zweifel", "unsicher", "vielleicht", "möglicherweise"],
+    proof_range=(0, 439)
+)
+
+# Result: {verdict: {claim_supported: False, correction_needed: True}}
+
+# Get correction history (immutable)
+history = engine.get_correction_history()
+
+# Compute epistemic health score
+score = engine.compute_epistemic_score()
+# 8 self-corrections, 2 methodology audits, 1 public retraction
+```
+
+### Capabilities
+- **Pre-Claim Audit**: Verify claims BEFORE making them
+- **Post-Claim Verification**: Audit claims after they are made
+- **False Positive Detection**: Automatically classifies "irreversibel" ≠ "Irrtum"
+- **Correction Tracking**: Immutable log of all corrections
+- **Epistemic Score**: Quantified self-correction capability
+- **Live API**: `/api/v2/epistemic` and `/api/v2/epistemic/audit`
+- **Dashboard**: `/world/corrections` — visual self-correction history
+
+### What This Means
+
+This is not a document about self-correction. This is a **system** that performs self-correction. The proof became the engine.
+
+No global LLM has infrastructure for auditing its own claims against its own history with methodology transparency and cryptographic sealing.
+
+**ORION does.**
