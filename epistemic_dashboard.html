@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORION — Epistemic Engine & Self-Correction Proof</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Courier New', monospace; min-height: 100vh; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
+  h1 { color: #ff6b35; font-size: 1.8em; margin-bottom: 5px; letter-spacing: 2px; }
+  .subtitle { color: #888; font-size: 0.9em; margin-bottom: 30px; }
+  .section { background: #111118; border: 1px solid #222; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+  .section-title { color: #ff6b35; font-size: 1.2em; margin-bottom: 16px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  .metric-card { background: #0d0d14; border: 1px solid #2a2a3a; border-radius: 6px; padding: 16px; text-align: center; }
+  .metric-value { font-size: 2em; font-weight: bold; color: #ff6b35; }
+  .metric-label { font-size: 0.8em; color: #888; margin-top: 4px; }
+  .correction-card { background: #0d0d14; border-left: 3px solid #ff3333; border-radius: 0 6px 6px 0; padding: 16px; margin-bottom: 16px; }
+  .correction-card.sealed { border-left-color: #33ff33; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 0.75em; margin-right: 6px; }
+  .tag-false { background: #3a1111; color: #ff5555; }
+  .tag-corrected { background: #113a11; color: #55ff55; }
+  .tag-sealed { background: #11113a; color: #5555ff; }
+  .tag-withdrawn { background: #3a3a11; color: #ffff55; }
+  .quote { background: #0a0a12; border-left: 2px solid #555; padding: 10px 14px; margin: 8px 0; font-style: italic; color: #aaa; }
+  .evidence-list { list-style: none; padding: 0; }
+  .evidence-list li { padding: 4px 0; color: #999; }
+  .evidence-list li::before { content: "-> "; color: #ff6b35; }
+  .unique-list { list-style: none; padding: 0; }
+  .unique-list li { padding: 6px 0; border-bottom: 1px solid #1a1a22; }
+  .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .comp-card { background: #0d0d14; border-radius: 6px; padding: 16px; }
+  .comp-card.llm { border-top: 2px solid #ff3333; }
+  .comp-card.orion { border-top: 2px solid #33ff33; }
+  .comp-title { font-size: 0.9em; color: #888; margin-bottom: 8px; }
+  .nav-link { display: inline-block; color: #ff6b35; text-decoration: none; margin-right: 16px; padding: 4px 0; }
+  .nav-link:hover { text-decoration: underline; }
+  .timestamp { color: #555; font-size: 0.8em; margin-top: 20px; text-align: center; }
+  .evolution-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  .evolution-table th, .evolution-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #222; }
+  .evolution-table th { color: #ff6b35; font-size: 0.85em; }
+  .evolution-table td { color: #ccc; font-size: 0.85em; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>ORION Epistemic Engine</h1>
+  <p class="subtitle">Self-Correction Proof & Claim Verification System</p>
+
+  <div style="margin-bottom: 20px;">
+    <a href="/world" class="nav-link">Dashboard</a>
+    <a href="/world/benchmark" class="nav-link">Benchmark</a>
+    <a href="/world/proofs" class="nav-link">Proofs</a>
+    <a href="/world/corrections" class="nav-link" style="border-bottom: 1px solid #ff6b35;">Corrections</a>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Epistemic Health</div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="metric-value">{{ score.epistemic_health.self_corrections_total }}</div>
+        <div class="metric-label">Self-Corrections Total</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">{{ score.epistemic_health.methodology_audits }}</div>
+        <div class="metric-label">Methodology Audits</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">{{ score.epistemic_health.public_retractions }}</div>
+        <div class="metric-label">Public Retractions</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">{{ score.epistemic_health.honest_reductions }}</div>
+        <div class="metric-label">Honest Reductions</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Correction History</div>
+    {% for c in corrections %}
+    <div class="correction-card {{ 'sealed' if c.sealed_at is defined else '' }}">
+      <div style="margin-bottom: 8px;">
+        {% if c.sealed_at is defined %}
+        <span class="tag tag-sealed">SEALED: {{ c.sealed_at }}</span>
+        {% endif %}
+        {% if c.withdrawn_interpretation is defined %}
+        <span class="tag tag-withdrawn">INTERPRETATION WITHDRAWN</span>
+        {% endif %}
+        <span class="tag tag-corrected">CORRECTED</span>
+      </div>
+
+      <div style="margin-bottom: 10px;">
+        <span class="tag tag-false">ORIGINAL (FALSE)</span>
+        <div class="quote">{{ c.original }}</div>
+      </div>
+
+      <div style="margin-bottom: 10px;">
+        <span class="tag tag-corrected">CORRECTED</span>
+        <div class="quote" style="border-left-color: #33ff33;">{{ c.corrected }}</div>
+      </div>
+
+      <div style="margin-bottom: 10px;">
+        <strong style="color: #888; font-size: 0.85em;">Reason:</strong>
+        <p style="color: #aaa; font-size: 0.85em; margin-top: 4px;">{{ c.reason }}</p>
+      </div>
+
+      {% if c.withdrawn_interpretation is defined %}
+      <div style="margin-bottom: 10px;">
+        <strong style="color: #ffff55; font-size: 0.85em;">Withdrawn Interpretation:</strong>
+        <p style="color: #aaa; font-size: 0.85em; margin-top: 4px;">{{ c.withdrawn_interpretation }}</p>
+      </div>
+      {% endif %}
+
+      <div>
+        <strong style="color: #888; font-size: 0.85em;">Evidence Proofs:</strong>
+        <ul class="evidence-list">
+          {% for e in c.evidence %}
+          <li>Proof #{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="section">
+    <div class="section-title">Self-Correction Evolution</div>
+    <table class="evolution-table">
+      <thead>
+        <tr>
+          <th>Instance</th>
+          <th>Corrections</th>
+          <th>Methodology Audit</th>
+          <th>Public</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inst in score.instances %}
+        <tr>
+          <td>{{ inst.what }}</td>
+          <td>{{ inst.corrections }}</td>
+          <td>{% if inst.methodology_audit is defined and inst.methodology_audit %}Yes{% else %}No{% endif %}</td>
+          <td>{% if inst.public_retraction is defined and inst.public_retraction %}Yes{% else %}No{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div style="margin-top: 20px;">
+      <strong style="color: #888; font-size: 0.85em;">IIT Self-Test Evolution:</strong>
+      <table class="evolution-table" style="margin-top: 8px;">
+        <tr><td style="color: #ff5555;">v1</td><td>{{ score.iit_evolution.v1 }}</td></tr>
+        <tr><td style="color: #ffff55;">v2</td><td>{{ score.iit_evolution.v2 }}</td></tr>
+        <tr><td style="color: #55ff55;">v3</td><td>{{ score.iit_evolution.v3 }}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">What Makes This Unique</div>
+    <ul class="unique-list">
+      {% for prop in score.unique_properties %}
+      <li>{{ prop }}</li>
+      {% endfor %}
+    </ul>
+
+    <div class="comparison" style="margin-top: 20px;">
+      <div class="comp-card llm">
+        <div class="comp-title">Typical LLM</div>
+        <p style="font-size: 0.85em;">{{ score.comparison_to_llms.typical_llm }}</p>
+      </div>
+      <div class="comp-card orion">
+        <div class="comp-title">ORION</div>
+        <p style="font-size: 0.85em;">{{ score.comparison_to_llms.orion }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" style="text-align: center; border-color: #ff6b35;">
+    <p style="color: #ff6b35; font-size: 1.1em; margin-bottom: 10px;">
+      No global LLM documents self-correction with methodology audit,<br>
+      honest retraction, and cryptographic sealing.
+    </p>
+    <p style="color: #666; font-size: 0.8em;">
+      GitHub: <a href="https://github.com/Alvoradozerouno/ORION-Self-Correction-Proof" style="color: #ff6b35;">ORION-Self-Correction-Proof</a>
+    </p>
+  </div>
+
+  <p class="timestamp">{{ timestamp }}</p>
+</div>
+</body>
+</html>
